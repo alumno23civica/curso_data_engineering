@@ -23,17 +23,30 @@ sources:
       - name: order_items
       - name: products
       - name: promos
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "discount > 0"
         description: ""
         columns:
+
           - name: promo_id
             data_type: varchar
-            description: ""
+            description: "clave única"
+            tests:
+              - unique
+              - not_null
           - name: discount
             data_type: number
-            description: ""
+            description: "valor numérico en moneda"
+            tests:
+              - not_null
           - name: status
             data_type: varchar
             description: ""
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['inactive', 'active']
           - name: _fivetran_deleted
             data_type: boolean
             description: ""
