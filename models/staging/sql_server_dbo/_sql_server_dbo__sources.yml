@@ -23,5 +23,22 @@ sources:
       - name: order_items
       - name: products
       - name: promos
+        description: ""
+        columns:
+          - name: promo_id
+            data_type: varchar
+            description: ""
+          - name: discount
+            data_type: number
+            description: ""
+          - name: status
+            data_type: varchar
+            description: ""
+          - name: _fivetran_deleted
+            data_type: boolean
+            description: ""
+          - name: _fivetran_synced
+            data_type: timestamp_tz
+            description: ""
       - name: users
           
