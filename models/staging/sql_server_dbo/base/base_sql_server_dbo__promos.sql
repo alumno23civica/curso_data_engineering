@@ -8,7 +8,7 @@ SELECT
     {{ dbt_utils.generate_surrogate_key(['PROMO_ID']) }} AS promo_id, -- Clave sustituta
     PROMO_ID as promo_name,
     DISCOUNT as discount,
-    STATUS as status, -- Mantiene el estado original
+    lower(STATUS) as status, -- Estado original normalizado
     CASE 
         WHEN STATUS = 'active' THEN TRUE
         ELSE FALSE
