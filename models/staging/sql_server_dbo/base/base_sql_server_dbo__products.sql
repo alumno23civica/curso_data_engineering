@@ -23,9 +23,10 @@ with
 
         select
             product_id,  -- Clave primaria
-            cast(price as decimal) as product_price,
+            cast(price as decimal(10,2)) as product_price, -- snapshot?
             trim(lower(name)) as product_name,  -- Remueve espacios y convierte a minúsculas
-            inventory as stock,
+            inventory as stock
+            -- categoria
             _fivetran_synced as at_synced
 
         from with_default_record

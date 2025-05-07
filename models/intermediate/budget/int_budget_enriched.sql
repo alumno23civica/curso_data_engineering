@@ -16,9 +16,9 @@ joined as (
         budget.month_trunc,
         budget.quantity,
         products.product_name,
-        products.price,
-        products.inventory,
-        budget.quantity * products.price as budgeted_cost,
+        products.product_price,
+        products.stock,
+        budget.quantity * products.product_price as budgeted_cost,
         budget.at_synced as budget_synced_at,
         products.at_synced as product_synced_at
     from budget
