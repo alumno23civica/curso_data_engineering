@@ -22,15 +22,22 @@ with
     renamed as (
 
         select
-            product_id,  -- Clave primaria
-            cast(price as decimal(10,2)) as product_price, -- snapshot?
+            {{ dbt_utils.generate_surrogate_key(["product_id"]) }} as product_sk,  -- Clave primaria
+            cast(price as decimal(10, 2)) as product_price,  -- snapshot?
             trim(lower(name)) as product_name,  -- Remueve espacios y convierte a minúsculas
-            inventory as inventory_qty
+            inventory as inventory_qty,
+            case
+                when inventory <= 10
+                then 'Low Stock'
+                when inventory between 11 and 50
+                then 'Normal Stock'
+                else 'High Stock'
+            end as inventory_stock,
             -- categoria
+            _fivetran_deleted as is_deleted,
             _fivetran_synced as at_synced
 
         from with_default_record
-        where _fivetran_deleted is distinct from true
 
     )
 

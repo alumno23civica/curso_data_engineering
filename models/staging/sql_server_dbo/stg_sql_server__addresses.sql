@@ -8,10 +8,10 @@ renamed as (
 
     select
         {{ dbt_utils.generate_surrogate_key(['address_id']) }} as address_sk,
-        zipcode,
-        country,
-        address,
-        state,
+        lpad(zipcode, 5, '0') as zipcode,
+        lower(country) as country,
+        lower(address),
+        lower(state) as state,
         _fivetran_deleted as is_deleted,
         _fivetran_synced as at_synced
 
