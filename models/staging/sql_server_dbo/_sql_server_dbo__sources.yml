@@ -1,0 +1,128 @@
+version: 2
+
+sources:
+
+  - name: sql_server_dbo # name of the source 
+    schema: sql_server_dbo # this is the schema our raw data lives in
+    database: ALUMNO23_DEV_BRONZE_DB # this is the name of our database
+
+    quoting:
+      database: false
+      schema: false
+      identifier: false
+
+    freshness:
+      #warn_after: {count: 24, period: hour}
+      #error_after: {count: 48, period: hour}
+
+    tables:
+
+      - name: addresses
+      - name: events 
+      - name: orders
+      - name: order_items
+      - name: products
+        description: ""
+        columns:
+          - name: product_id
+            data_type: varchar
+            description: ""
+            tests:
+              - not_null
+              - unique
+          - name: price
+            data_type: float
+            description: ""
+            tests:
+              - dbt_utils.expression_is_true:
+                  expression: "price > 0"
+          - name: name
+            data_type: varchar
+            description: ""
+            tests:
+              - not_null
+          - name: inventory
+            data_type: number
+            description: ""
+            tests:
+              - not_null
+          - name: _fivetran_deleted
+            data_type: boolean
+            description: ""
+          - name: _fivetran_synced
+            data_type: timestamp_tz
+            description: ""
+      - name: promos
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "discount > 0"
+        description: ""
+        columns:
+
+          - name: promo_id
+            data_type: varchar
+            description: "clave única"
+            tests:
+              - unique
+              - not_null
+          - name: discount
+            data_type: number
+            description: "valor numérico en moneda"
+            tests:
+              - not_null
+          - name: status
+            data_type: varchar
+            description: ""
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ['inactive', 'active']
+          - name: _fivetran_deleted
+            data_type: boolean
+            description: ""
+          - name: _fivetran_synced
+            data_type: timestamp_tz
+            description: ""
+      - name: users
+        description: ""
+        columns:
+          - name: user_id
+            data_type: varchar
+            description: ""
+            tests:
+              - not_null
+              - unique
+          - name: updated_at
+            data_type: timestamp_tz
+            description: ""
+          - name: address_id
+            data_type: varchar
+            description: ""
+            tests:
+              - not_null
+          - name: last_name
+            data_type: varchar
+            description: ""
+          - name: created_at
+            data_type: timestamp_tz
+            description: ""
+          - name: phone_number
+            data_type: varchar
+            description: ""
+          - name: total_orders
+            data_type: number
+            description: ""
+          - name: first_name
+            data_type: varchar
+            description: ""
+          - name: email
+            data_type: varchar
+            description: ""
+          - name: _fivetran_deleted
+            data_type: boolean
+            description: ""
+          - name: _fivetran_synced
+            data_type: timestamp_tz
+            description: ""
+
+          
