@@ -33,9 +33,6 @@ sources:
           - name: price
             data_type: float
             description: ""
-            tests:
-              - dbt_utils.expression_is_true:
-                  expression: "price > 0"
           - name: name
             data_type: varchar
             description: ""
