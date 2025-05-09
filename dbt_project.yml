@@ -50,6 +50,11 @@ models:
         +schema: google_sheets
       sql_server_dbo:
         +schema: sql_server_dbo
+
+    intermediate:
+      +materialized: view
+      +database: "{{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB"
+        
       
     marts:
       +materialized: table
