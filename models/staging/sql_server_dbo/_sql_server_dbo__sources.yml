@@ -17,10 +17,7 @@ sources:
 
     tables:
 
-      - name: addresses
-      - name: events 
-      - name: orders
-      - name: order_items
+      - name: events
       - name: products
         description: ""
         columns:
