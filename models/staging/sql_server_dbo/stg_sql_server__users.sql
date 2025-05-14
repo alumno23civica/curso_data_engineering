@@ -11,8 +11,8 @@ renamed as (
         updated_at,
         {{ dbt_utils.generate_surrogate_key(['address_id']) }} as address_sk,
         lower(concat(first_name,' ',last_name)) as user_name,
-        lower(first_name),
-        lower(last_name),
+        lower(first_name) as first_name,
+        lower(last_name) as last_name,
         created_at,
         trim(phone_number)as phone_number,
         case 

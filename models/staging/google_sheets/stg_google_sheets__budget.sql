@@ -11,7 +11,7 @@ renamed as (
         cast(quantity as integer) as quantity,
         month,
         date_trunc('month', month) as month_trunc,
-        product_id,
+        {{ dbt_utils.generate_surrogate_key(['product_id']) }} as product_sk,
         _fivetran_synced as at_synced
 
     from source

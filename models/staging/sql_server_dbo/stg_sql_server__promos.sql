@@ -20,7 +20,7 @@ with
 
     casted_renamed as (
         select
-            {{ dbt_utils.generate_surrogate_key(["promo_id"]) }} as promo_id,  -- Clave sustituta
+            {{ dbt_utils.generate_surrogate_key(["promo_id"]) }} as promo_sk,  -- Clave sustituta
             promo_id as promo_name,
             cast(discount as decimal(10,2)) as discount_eur,
             lower(status) as status,  -- Estado original normalizado
