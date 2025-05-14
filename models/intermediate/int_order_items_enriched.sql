@@ -36,6 +36,7 @@ joined as (
         o.order_total,
         o.shipping_cost,
         o.status,
+        p.product_price,
 
         -- posibles métricas calculadas
         oi.quantity * p.product_price as line_total
