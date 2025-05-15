@@ -1,14 +1,11 @@
 -- models/staging/stg_spacex_rockets.sql
 
 /**
-  Modelo Staging para los datos raw de cohetes.
-  Selecciona y renombra columnas desde el source 'spacex.rockets',
-  manteniendo las columnas semi-estructuradas para transformaciones posteriores.
+  Modelo Staging para los datos raw de cohetes, aplanados en Python.
+  Selecciona y renombra columnas de la tabla raw aplanada
 */
 with source as (
 
-    -- Referencia la tabla raw de cohetes en tu source 'spacex'
-    -- Esto toma todas las columnas de esa tabla.
     select * from {{ source('spacex', 'rockets') }}
 
 ),
@@ -17,45 +14,64 @@ renamed as (
 
     select
         -- Clave Primaria
-        id as rocket_id,
+        ID as rocket_id, -- Renombra ID a rocket_id
 
         -- Información básica
-        name as rocket_name,
-        type as rocket_type,
-        active as is_active,
-        stages as number_of_stages, -- Renombrado para claridad
-        boosters as number_of_boosters, -- Renombrado para claridad
+        NAME as rocket_name, -- Renombra NAME a rocket_name
+        TYPE as rocket_type, -- Renombra TYPE a rocket_type
+        ACTIVE as is_active, -- Renombra ACTIVE a is_active (booleano)
+        BOOSTERS as number_of_boosters, -- Renombra BOOSTERS a number_of_boosters
 
         -- Rendimiento y Costo
-        cost_per_launch,
-        success_rate_pct,
+        COST_PER_LAUNCH, -- Ya en buen formato
+        SUCCESS_RATE_PCT, -- Ya en buen formato
 
         -- Fechas y Origen
-        first_flight, -- Asumimos que es un tipo fecha/timestamp o similar
-        country as origin_country,
-        company as manufacturer_company,
+        FIRST_FLIGHT, -- Ya en buen formato (debería ser DATE o VARCHAR)
+                      -- Puedes añadir un cast si es necesario: try_cast(FIRST_FLIGHT as date) as first_flight
+
+        COUNTRY as origin_country, -- Renombra COUNTRY a origin_country
+        COMPANY as manufacturer_company, -- Renombra COMPANY a manufacturer_company
 
         -- Enlaces y Descripciones
-        wikipedia as wikipedia_url,
-        description as rocket_description,
+        WIKIPEDIA as wikipedia_url, -- Renombra WIKIPEDIA a wikipedia_url
+        DESCRIPTION as rocket_description, -- Renombra DESCRIPTION a rocket_description
 
-        -- Columnas que contienen estructuras anidadas o listas
-        -- Las mantenemos con un sufijo '_json' (o '_struct'/'_list' según convención)
-        -- para indicar que son semi-estructuradas y requerirán parsing/aplanamiento
-        -- en modelos posteriores si necesitas acceder a sus sub-campos.
-        height as height_struct, -- O height_json si se cargó como JSON string
-        diameter as diameter_struct, -- O diameter_json
-        mass as mass_struct, -- O mass_json
-        first_stage as first_stage_struct, -- O first_stage_json
-        second_stage as second_stage_struct, -- O second_stage_json
-        engines as engines_struct, -- O engines_json
-        landing_legs as landing_legs_struct, -- O landing_legs_json
-        payload_weights as payload_weights_struct, -- O payload_weights_json
-        flickr_images as flickr_images_list, -- O flickr_images_json
+        -- --- Columnas Aplanadas Extraídas en Python ---
+        -- Seleccionamos los nombres de columna tal como vienen en el source (mayúsculas)
+        -- y los renombramos a snake_case minúsculas si es necesario.
 
-        -- Si hubiera alguna columna de control de carga (ej. de DLT o Snowpipe)
-        -- _loaded_at,
-        -- _file_name
+        HEIGHT_METERS, -- Ya en buen formato
+        HEIGHT_FEET, -- Ya en buen formato
+        DIAMETER_METERS, -- Ya en buen formato
+        DIAMETER_FEET, -- Ya en buen formato
+        MASS_KG, -- Ya en buen formato
+        MASS_LB, -- Ya en buen formato
+
+        ENGINES_NUMBER, -- Ya en buen formato
+        ENGINES_TYPE as engine_type, -- Renombra ENGINES_TYPE a engine_type
+        ENGINES_VERSION as engine_version, -- Renombra ENGINES_VERSION a engine_version
+        ENGINE_PROPELLANT_1, -- Ya en buen formato
+        ENGINE_PROPELLANT_2, -- Ya en buen formato
+        ENGINE_THRUST_SEA_LEVEL_KN, -- Ya en buen formato
+        ENGINE_THRUST_VACUUM_KN, -- Ya en buen formato
+
+        LANDING_LEGS_NUMBER, -- Ya en buen formato
+        LANDING_LEGS_MATERIAL, -- Ya en buen formato
+
+        FIRST_STAGE_REUSABLE, -- Ya en buen formato (booleano o string)
+        FIRST_STAGE_ENGINES, -- Ya en buen formato
+        FIRST_STAGE_FUEL_AMOUNT_TONS, -- Ya en buen formato
+        FIRST_STAGE_BURN_TIME_SEC, -- Ya en buen formato
+
+        SECOND_STAGE_ENGINES, -- Ya en buen formato
+        SECOND_STAGE_FUEL_AMOUNT_TONS, -- Ya en buen formato
+        SECOND_STAGE_BURN_TIME_SEC, -- Ya en buen formato
+
+        -- --- Columnas de Listas Convertidas a String Resumen en Python ---
+        PAYLOAD_WEIGHTS_SUMMARY, -- Ya en buen formato
+        FLICKR_IMAGE_URLS_LIST -- Ya en buen formato
+
 
     from source
 
