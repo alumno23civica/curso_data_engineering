@@ -2,14 +2,11 @@
 
 /**
   Modelo Staging para los datos raw de plataformas de lanzamiento (Launchpads).
-  Selecciona, castea y renombra columnas de la tabla raw,
-  basándose en la estructura exacta de la tabla Snowflake proporcionada.
-  Asume que las columnas de listas e imágenes se aplanaron a string en Python.
+  Selecciona, castea y renombrado columnas de la tabla raw
 */
 with source as (
 
     -- Referencia la tabla raw de launchpads.
-    -- Asegúrate que tu source 'spacex' en schema.yml apunte a esta tabla raw.
     select * from {{ source('spacex', 'launchpads') }}
 
 ),

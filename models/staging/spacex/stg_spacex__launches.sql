@@ -2,13 +2,10 @@
 
 /**
   Modelo Staging para los datos raw de lanzamientos, aplanados en Python.
-  Selecciona, castea y renombra columnas de la tabla raw,
-  basándose en la lista exacta de columnas y tipos proporcionada.
 */
 with source as (
 
     -- Referencia la tabla raw que cargaste con el archivo spacex_launches_raw_flattened.csv.
-    -- Asegúrate que tu source 'spacex' en schema.yml apunte a esta tabla raw actualizada.
     select * from {{ source('spacex', 'launches') }}
 
 ),

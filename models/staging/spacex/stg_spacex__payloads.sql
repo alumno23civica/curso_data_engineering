@@ -2,14 +2,10 @@
 
 /**
   Modelo Staging para los datos raw de cargas útiles (Payloads).
-  Selecciona, castea y renombra columnas de la tabla raw,
-  basándose en la estructura exacta de la tabla Snowflake proporcionada.
 */
 with source as (
 
     -- Referencia la tabla raw de payloads.
-    -- Asegúrate que tu source 'spacex' en schema.yml apunte a esta tabla raw.
-    -- El nombre de la tabla raw debe coincidir con lo configurado en schema.yml.
     select * from {{ source('spacex', 'payloads') }}
 
 ),
@@ -18,7 +14,6 @@ renamed as (
 
     select
         -- Clave Primaria
-        -- Casteamos explícitamente al tipo que indicaste (VARCHAR)
         ID::varchar as payload_id, -- Renombra ID a payload_id
 
         -- Información básica de la carga útil
