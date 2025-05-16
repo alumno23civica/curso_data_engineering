@@ -16,6 +16,28 @@ sources:
       #error_after: {count: 48, period: hour}
 
     tables:
+      - name: core_usage
+        columns:
+          - name: launch_id
+            data_type: varchar
+          - name: core_id
+            data_type: varchar
+          - name: core_flight_number_in_launch
+            data_type: number
+          - name: has_gridfins_in_launch
+            data_type: boolean
+          - name: has_legs_in_launch
+            data_type: boolean
+          - name: is_reused_in_launch
+            data_type: boolean
+          - name: is_landing_attempt_in_launch
+            data_type: boolean
+          - name: is_landing_successful_in_launch
+            data_type: boolean
+          - name: landing_type_in_launch
+            data_type: varchar
+          - name: landpad_id_in_landing
+            data_type: varchar
 
       - name: cores
         columns:
@@ -42,31 +64,7 @@ sources:
           - name: id
             data_type: varchar
 
-      - name: cores2
-        columns:
-          - name: c1
-            data_type: varchar
-          - name: c2
-            data_type: varchar
-          - name: c3
-            data_type: varchar
-          - name: c4
-            data_type: varchar
-          - name: c5
-            data_type: varchar
-          - name: c6
-            data_type: varchar
-          - name: c7
-            data_type: varchar
-          - name: c8
-            data_type: varchar
-          - name: c9
-            data_type: varchar
-          - name: c10
-            data_type: varchar
-          - name: c11
-            data_type: varchar
-
+      
       - name: launches
         columns:
           - name: id
@@ -138,39 +136,6 @@ sources:
 
       - name: launchpads
         columns:
-          - name: images
-            data_type: varchar
-          - name: name
-            data_type: varchar
-          - name: full_name
-            data_type: varchar
-          - name: locality
-            data_type: varchar
-          - name: region
-            data_type: varchar
-          - name: latitude
-            data_type: number
-          - name: longitude
-            data_type: number
-          - name: launch_attempts
-            data_type: number
-          - name: launch_successes
-            data_type: number
-          - name: rockets
-            data_type: varchar
-          - name: timezone
-            data_type: varchar
-          - name: launches
-            data_type: varchar
-          - name: status
-            data_type: varchar
-          - name: details
-            data_type: varchar
-          - name: id
-            data_type: varchar
-
-      - name: launchpads2
-        columns:
           - name: id
             data_type: varchar
           - name: name
@@ -202,66 +167,8 @@ sources:
           - name: image_url_large_first
             data_type: varchar
 
-      - name: payloads
-        columns:
-          - name: dragon
-            data_type: varchar
-          - name: name
-            data_type: varchar
-          - name: type
-            data_type: varchar
-          - name: reused
-            data_type: boolean
-          - name: launch
-            data_type: varchar
-          - name: customers
-            data_type: varchar
-          - name: norad_ids
-            data_type: varchar
-          - name: nationalities
-            data_type: varchar
-          - name: manufacturers
-            data_type: varchar
-          - name: mass_kg
-            data_type: number
-          - name: mass_lbs
-            data_type: number
-          - name: orbit
-            data_type: varchar
-          - name: reference_system
-            data_type: varchar
-          - name: regime
-            data_type: varchar
-          - name: longitude
-            data_type: number
-          - name: semi_major_axis_km
-            data_type: number
-          - name: eccentricity
-            data_type: varchar
-          - name: periapsis_km
-            data_type: number
-          - name: apoapsis_km
-            data_type: number
-          - name: inclination_deg
-            data_type: number
-          - name: period_min
-            data_type: number
-          - name: lifespan_years
-            data_type: number
-          - name: epoch
-            data_type: timestamp_ntz
-          - name: mean_motion
-            data_type: number
-          - name: raan
-            data_type: number
-          - name: arg_of_pericenter
-            data_type: number
-          - name: mean_anomaly
-            data_type: number
-          - name: id
-            data_type: varchar
 
-      - name: payloads2
+      - name: payloads
         columns:
           - name: id
             data_type: varchar

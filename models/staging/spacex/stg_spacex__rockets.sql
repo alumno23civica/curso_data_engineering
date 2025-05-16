@@ -1,8 +1,7 @@
 -- models/staging/stg_spacex_rockets.sql
 
 /**
-  Modelo Staging para los datos raw de cohetes, aplanados en Python.
-  Selecciona y renombra columnas de la tabla raw aplanada
+  Modelo Staging para los datos raw de cohetes
 */
 with source as (
 
@@ -27,8 +26,7 @@ renamed as (
         SUCCESS_RATE_PCT, -- Ya en buen formato
 
         -- Fechas y Origen
-        FIRST_FLIGHT, -- Ya en buen formato (debería ser DATE o VARCHAR)
-                      -- Puedes añadir un cast si es necesario: try_cast(FIRST_FLIGHT as date) as first_flight
+        try_cast(FIRST_FLIGHT as date) as first_flight, 
 
         COUNTRY as origin_country, -- Renombra COUNTRY a origin_country
         COMPANY as manufacturer_company, -- Renombra COMPANY a manufacturer_company
