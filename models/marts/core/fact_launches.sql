@@ -1,9 +1,8 @@
--- models/marts/fact_launch_event.sql
+-- models/marts/fact_launches.sql
 
 /**
   Tabla de Hechos para los Eventos de Lanzamiento.
   Granularidad: Una fila por cada Lanzamiento individual.
-  Contiene las métricas clave del lanzamiento y claves foráneas a las dimensiones básicas solicitadas.
 */
 with stg_launches as (
 
@@ -52,6 +51,7 @@ select
     stg_launches.launch_name,
     stg_launches.is_upcoming,
     stg_launches.is_tbd,
+    stg_launches.is_net,
     stg_launches.launch_window, -- Si es un número, puede considerarse métrica o degenerada
     stg_launches.static_fire_date_utc -- Fecha/hora del encendido estático (Timestamp)
 
