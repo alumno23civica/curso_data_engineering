@@ -56,6 +56,8 @@ models:
     intermediate:
       +materialized: view
       +database: "{{ env_var('DBT_ENVIRONMENTS') }}_SILVER_DB"
+      spacex:
+        +schema: spacex
         
       
     marts:

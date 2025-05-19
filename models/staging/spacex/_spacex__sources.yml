@@ -1,300 +1,769 @@
-version: 2
+# version: 2 # Mantén la versión si ya está
 
 sources:
+  - name: spacex # Nombre lógico de la fuente (el grupo de tablas raw)
+    schema: spacex # Este es el nombre del esquema en tu base de datos donde residen las tablas raw
+    database: "ALUMNO23_DEV_BRONZE_DB" # Este es el nombre de tu base de datos
+    description: "Datos raw de la API de SpaceX, cargados desde archivos CSV aplanados." # Descripción general de la fuente
 
-  - name: spacex # name of the source 
-    schema: spacex # this is the schema our raw data lives in
-    database: "ALUMNO23_DEV_BRONZE_DB" # this is the name of our database
+    # Configuración de comillas si es necesaria (parece que no lo es con false)
+    # quoting:
+    #   database: false
+    #   schema: false
+    #   identifier: false
 
-    quoting:
-      database: false
-      schema: false
-      identifier: false
-
-    freshness:
-      #warn_after: {count: 24, period: hour}
-      #error_after: {count: 48, period: hour}
+    # Configuración de frescura si quieres monitorizar la antigüedad de los datos
+    # freshness:
+    #   warn_after: {count: 24, period: hour}
+    #   error_after: {count: 48, period: hour}
 
     tables:
+      # --- core_usage ---
       - name: core_usage
+        description: "Datos raw del uso de cada core en un lanzamiento específico. Aplanado desde el array 'cores' en el endpoint de Launches."
         columns:
           - name: launch_id
+            description: "ID único del lanzamiento asociado a este uso del core (FK a launches.id)."
             data_type: varchar
+            tests: # Tests para core_usage.launch_id
+              - not_null # No debe ser nulo, es una clave de la relación
+              - relationships: # Test de relación con la tabla launches
+                  to: source('spacex', 'launches')
+                  field: id # El campo id en la tabla launches
+
           - name: core_id
+            description: "ID único del core utilizado en este lanzamiento (FK a cores.id)."
             data_type: varchar
+            tests: # Tests para core_usage.core_id
+              - relationships: # Test de relación con la tabla cores
+                  to: source('spacex', 'cores')
+                  field: id # El campo id en la tabla cores
+
+          # La combinación de launch_id y core_id (y potencialmente el número de vuelo del core si se usa varias veces en el mismo lanzamiento, que es raro)
+          # forma la clave primaria de esta tabla raw. Añadimos un test unique_combination.
+          # Nota: Si dbt no soporta unique_combination en sources, este test se movería al modelo staging.
+          # Como alternativa más simple en raw, testea not_null en las partes de la clave.
+          # tests:
+          #   - dbt_utils.unique_combination_of_columns: # Requiere el paquete dbt-utils
+          #       columns: ['launch_id', 'core_id'] # Si la combinación simple es única
+
           - name: core_flight_number_in_launch
+            description: "Número de vuelo de este core en la secuencia de vuelos de *este* core (no el vuelo total del lanzamiento)." 
             data_type: number
+            # Puede ser null, significa que ese core aún no ha volado
+
           - name: has_gridfins_in_launch
+            description: "Indica si este core tenía gridfins instalados para este lanzamiento."
             data_type: boolean
+            # No añadimos not_null si la ausencia de valor significa 'desconocido' o 'no aplica'.
+
           - name: has_legs_in_launch
+            description: "Indica si este core tenía patas de aterrizaje instaladas para este lanzamiento."
             data_type: boolean
+            # No añadimos not_null si la ausencia de valor significa 'desconocido' o 'no aplica'.
+
           - name: is_reused_in_launch
+            description: "Indica si este core fue reutilizado en este lanzamiento."
             data_type: boolean
+
           - name: is_landing_attempt_in_launch
+            description: "Indica si se intentó aterrizar este core durante este lanzamiento."
             data_type: boolean
+
           - name: is_landing_successful_in_launch
+            description: "Indica si el intento de aterrizaje de este core fue exitoso en este lanzamiento."
             data_type: boolean
+
           - name: landing_type_in_launch
+            description: "Tipo de aterrizaje intentado (RTLS, ASDS, Ocean) para este core en este lanzamiento."
             data_type: varchar
+
           - name: landpad_id_in_landing
+            description: "ID del landpad donde se intentó/logró el aterrizaje (FK a launchpads.id)."
             data_type: varchar
 
+      # --- cores ---
       - name: cores
+        description: "Datos raw de los activos de cohetes de primera etapa (cores)."
         columns:
-          - name: block
-            data_type: number
-          - name: reuse_count
-            data_type: number
-          - name: rtls_attempts
-            data_type: number
-          - name: rtls_landings
-            data_type: number
-          - name: asds_attempts
-            data_type: number
-          - name: asds_landings
-            data_type: number
-          - name: last_update
-            data_type: varchar
-          - name: launches
-            data_type: varchar
-          - name: serial
-            data_type: varchar
-          - name: status
-            data_type: varchar
           - name: id
+            description: "ID único del core (Clave Primaria)."
+            data_type: varchar
+            tests: # Tests para la clave primaria
+              - unique
+              - not_null
+
+          - name: serial
+            description: "Número de serie del core."
+            data_type: varchar
+            tests:
+              - not_null # El número de serie debería ser siempre conocido.
+
+          - name: block
+            description: "Número de bloque del core (ej. Block 5)."
+            data_type: number
+
+          - name: status
+            description: "Estado actual del core (ej. active, inactive, lost, expended)."
             data_type: varchar
 
-      
+          - name: reuse_count
+            description: "Número total de veces que este core ha sido reutilizado exitosamente."
+            data_type: number
+            tests:
+              - not_null # Este conteo debería estar siempre presente (al menos 0).
+
+          - name: rtls_attempts
+            description: "Número total de intentos de aterrizaje RTLS (Return To Launch Site) para este core."
+            data_type: number
+            tests:
+              - not_null # Este conteo debería estar siempre presente (al menos 0).
+
+          - name: rtls_landings
+            description: "Número total de aterrizajes RTLS exitosos para este core."
+            data_type: number
+            tests:
+              - not_null # Este conteo debería estar siempre presente (al menos 0).
+
+          - name: asds_attempts
+            description: "Número total de intentos de aterrizaje ASDS (Autonomous Spaceport Drone Ship) para este core."
+            data_type: number
+            tests:
+              - not_null # Este conteo debería estar siempre presente (al menos 0).
+
+          - name: asds_landings
+            description: "Número total de aterrizajes ASDS exitosos para este core."
+            data_type: number
+            tests:
+              - not_null # Este conteo debería estar siempre presente (al menos 0).
+
+          - name: last_update
+            description: "Fecha y hora de la última actualización del estado de este core (como string en formato UTC)."
+            data_type: varchar
+            # No añadimos not_null si puede no tener una última actualización.
+
+          - name: launches
+            description: "Lista de IDs de lanzamientos donde este core ha sido utilizado (como string separado por comas)."
+            data_type: varchar
+            # Esta columna es informativa, no se usa para joins directos de FK en el modelo dimensional.
+
+      # --- launches ---
       - name: launches
+        description: "Datos raw de los eventos de lanzamientos de SpaceX."
         columns:
           - name: id
+            description: "ID único del lanzamiento (Clave Primaria)."
             data_type: varchar
+            tests: # Tests para la clave primaria
+              - unique
+              - not_null
+
           - name: flight_number
+            description: "Número secuencial del vuelo de SpaceX."
             data_type: number
+            tests:
+              - not_null # El número de vuelo debería ser siempre conocido.
+
           - name: name
+            description: "Nombre oficial de la misión/lanzamiento."
             data_type: varchar
+            tests:
+              - not_null # El nombre del lanzamiento debería ser siempre conocido.
+
           - name: date_utc
+            description: "Fecha del lanzamiento en UTC."
             data_type: date
+            tests:
+              - not_null # La fecha de un lanzamiento histórico o programado debería ser conocida.
+
           - name: success
+            description: "Indica si el lanzamiento fue exitoso."
             data_type: boolean
+
           - name: upcoming
+            description: "Indica si es un próximo lanzamiento."
             data_type: boolean
+
           - name: static_fire_date_utc
+            description: "Fecha y hora del encendido estático previo al lanzamiento (como timestamp en UTC)."
             data_type: timestamp_ntz
+
           - name: tbd
+            description: "Indica si la fecha/hora exacta del lanzamiento está aún por determinar."
             data_type: boolean
+
           - name: net
+            description: "Indica si la fecha es 'No antes de' (No Earlier Than)."
             data_type: boolean
+
           - name: window
+            description: "Duración de la ventana de lanzamiento (en minutos)."
             data_type: number
+
           - name: rocket
+            description: "ID único del tipo de cohete utilizado en este lanzamiento (FK a rockets.id)."
             data_type: varchar
+            tests: # Test de relación con la tabla rockets
+              - not_null # Un lanzamiento debe usar un cohete.
+              - relationships:
+                  to: source('spacex', 'rockets')
+                  field: id
+
           - name: launchpad
+            description: "ID único de la plataforma de lanzamiento utilizada (FK a launchpads.id)."
             data_type: varchar
+            tests: # Test de relación con la tabla launchpads
+              - not_null # Un lanzamiento debe ocurrir en una plataforma.
+              - relationships:
+                  to: source('spacex', 'launchpads')
+                  field: id
+
           - name: auto_update
+            description: "Indica si los datos del lanzamiento se actualizan automáticamente."
             data_type: boolean
+
           - name: launch_library_id
+            description: "ID de Launch Library asociada al lanzamiento (si aplica)."
             data_type: varchar
+
           - name: details
+            description: "Descripción detallada del lanzamiento."
             data_type: varchar
+
+          # --- Columnas de Links (aplanadas a VARCHAR) ---
+          # Descripciones para cada enlace
           - name: links_patch_small
+            description: "URL del parche pequeño de la misión."
             data_type: varchar
           - name: links_patch_large
+            description: "URL del parche grande de la misión."
             data_type: varchar
           - name: links_reddit_campaign
+            description: "URL del hilo de Reddit sobre la campaña de la misión."
             data_type: varchar
           - name: links_reddit_launch
+            description: "URL del hilo de Reddit sobre el lanzamiento en sí."
             data_type: varchar
           - name: links_reddit_media
+            description: "URL del hilo de Reddit sobre medios relacionados con el lanzamiento."
             data_type: varchar
           - name: links_flickr_small
+            description: "URL de la primera imagen pequeña de Flickr asociada."
             data_type: varchar
           - name: links_flickr_original
+            description: "URL de la primera imagen original de Flickr asociada."
             data_type: varchar
           - name: links_presskit
+            description: "URL del press kit de la misión."
             data_type: varchar
           - name: links_webcast
+            description: "URL del webcast (transmisión en vivo) del lanzamiento."
             data_type: varchar
           - name: links_youtube_id
+            description: "ID del video de YouTube del webcast."
             data_type: varchar
           - name: links_article
+            description: "URL de un artículo de noticias sobre el lanzamiento."
             data_type: varchar
           - name: links_wikipedia
+            description: "URL del artículo de Wikipedia sobre el lanzamiento."
             data_type: varchar
+
+          # --- Columnas de Listas (aplanadas a VARCHAR) ---
           - name: payload_ids
+            description: "Lista de IDs de las cargas útiles en este lanzamiento (como string separado por comas)."
             data_type: varchar
+            # Nota: La relación se gestiona desde payloads.launch en el modelo dimensional.
+
           - name: cores_summary
+            description: "Resumen de los cores utilizados en este lanzamiento, incluyendo ID, vuelo del core, reuso y éxito de aterrizaje en este vuelo (como string '; ' separado)."
             data_type: varchar
+            # Nota: Información detallada extraída a core_usage.
+
           - name: crew_summary
+            description: "Resumen de la tripulación en este lanzamiento (como string '; ' separado)."
             data_type: varchar
+
           - name: ship_ids
+            description: "Lista de IDs de los barcos de soporte/recuperación en este lanzamiento (como string separado por comas)."
             data_type: varchar
+
           - name: capsule_ids
+            description: "Lista de IDs de las cápsulas en este lanzamiento (como string separado por comas)."
             data_type: varchar
+
           - name: failures_summary
-            data_type: varchar
+            description: "Resumen de los fallos del lanzamiento (como string)."
+            data_type: varchar # Basado en tu schema.yml, si el JSON es complejo y prefieres guardarlo, ajusta el tipo.
 
+      # --- launchpads ---
       - name: launchpads
+        description: "Datos raw de las plataformas de lanzamiento y aterrizaje de SpaceX."
         columns:
           - name: id
+            description: "ID único de la plataforma (Clave Primaria)."
             data_type: varchar
+            tests: # Tests para la clave primaria
+              - unique
+              - not_null
+
           - name: name
+            description: "Nombre corto de la plataforma (ej. LC-39A, LZ-1)."
             data_type: varchar
+
           - name: full_name
+            description: "Nombre completo de la plataforma (ej. Kennedy Space Center Historic Launch Complex 39A)."
             data_type: varchar
+            tests:
+              - not_null # El nombre completo debería ser conocido.
+
           - name: locality
+            description: "Localidad asociada a la plataforma."
             data_type: varchar
+
           - name: region
+            description: "Región (Estado/País) asociada a la plataforma."
             data_type: varchar
+            tests:
+              - not_null # La región debería ser conocida.
+
           - name: timezone
+            description: "Zona horaria de la plataforma."
             data_type: varchar
+
           - name: latitude
+            description: "Latitud de la plataforma."
             data_type: number
+
           - name: longitude
+            description: "Longitud de la plataforma."
             data_type: number
+
           - name: launch_attempts
+            description: "Número total de intentos de lanzamiento desde esta plataforma."
             data_type: number
+            tests:
+              - not_null # Este conteo debería estar presente (al menos 0).
+
           - name: launch_successes
+            description: "Número total de lanzamientos exitosos desde esta plataforma."
             data_type: number
+            tests:
+              - not_null # Este conteo debería estar presente (al menos 0).
+
           - name: status
+            description: "Estado operativo de la plataforma (ej. active, inactive, retired, under construction)."
             data_type: varchar
+
           - name: details
+            description: "Descripción detallada de la plataforma."
             data_type: varchar
+
+          # --- Columnas de Listas (aplanadas a VARCHAR) ---
           - name: rocket_ids_list
+            description: "Lista de IDs de cohetes que han usado esta plataforma (como string separado por comas)."
             data_type: varchar
+
           - name: launch_ids_list
+            description: "Lista de IDs de lanzamientos que han ocurrido desde esta plataforma (como string separado por comas)."
             data_type: varchar
+
           - name: image_url_large_first
+            description: "URL de la primera imagen grande asociada a la plataforma."
             data_type: varchar
 
-
+      # --- payloads ---
       - name: payloads
+        description: "Datos raw de las cargas útiles lanzadas por SpaceX."
         columns:
           - name: id
+            description: "ID único de la carga útil (Clave Primaria)."
             data_type: varchar
+            tests: # Tests para la clave primaria
+              - unique
+              - not_null
+
           - name: name
+            description: "Nombre de la carga útil."
             data_type: varchar
+            tests:
+              - not_null # El nombre debería ser conocido.
+
           - name: type
-            data_type: varchar
-          - name: reused
-            data_type: boolean
-          - name: launch
-            data_type: varchar
-          - name: orbit
-            data_type: varchar
-          - name: reference_system
-            data_type: varchar
-          - name: regime
-            data_type: varchar
-          - name: longitude
-            data_type: number
-          - name: inclination_deg
-            data_type: number
-          - name: period_min
-            data_type: number
-          - name: lifespan_years
-            data_type: number
-          - name: apoapsis_km
-            data_type: number
-          - name: periapsis_km
-            data_type: number
-          - name: mass_kg
-            data_type: number
-          - name: mass_lbs
-            data_type: number
-          - name: dragon_capsule_id
-            data_type: varchar
-          - name: dragon_mass_returned_kg
-            data_type: number
-          - name: dragon_mass_returned_lbs
-            data_type: number
-          - name: dragon_flight_time_sec
-            data_type: number
-          - name: dragon_water_landing
-            data_type: boolean
-          - name: dragon_land_landing
-            data_type: boolean
-          - name: customers_list
-            data_type: varchar
-          - name: norad_ids_list
-            data_type: varchar
-          - name: nationalities_list
-            data_type: varchar
-          - name: manufacturers_list
+            description: "Tipo de carga útil (ej. Satellite, Crew Dragon, Cargo Dragon)."
             data_type: varchar
 
-      
+          - name: reused
+            description: "Indica si la carga útil fue reutilizada."
+            data_type: boolean
+
+          - name: launch
+            description: "ID único del lanzamiento al que pertenece esta carga útil (FK a launches.id)."
+            data_type: varchar
+
+          - name: orbit
+            description: "Tipo de órbita objetivo (ej. LEO, GTO, SSO)."
+            data_type: varchar
+
+          - name: reference_system
+            description: "Sistema de referencia orbital."
+            data_type: varchar
+
+          - name: regime
+            description: "Régimen orbital."
+            data_type: varchar
+
+          - name: longitude
+            description: "Longitud (si es una órbita geoestacionaria)."
+            data_type: number
+
+          - name: inclination_deg
+            description: "Inclinación orbital en grados."
+            data_type: number
+
+          - name: period_min
+            description: "Período orbital en minutos."
+            data_type: number
+
+          - name: lifespan_years
+            description: "Vida útil estimada en años."
+            data_type: number
+
+          - name: apoapsis_km
+            description: "Apoapsis (punto más lejano de la órbita) en kilómetros."
+            data_type: number
+
+          - name: periapsis_km
+            description: "Periapsis (punto más cercano de la órbita) en kilómetros."
+            data_type: number
+
+          - name: mass_kg
+            description: "Masa de la carga útil en kilogramos."
+            data_type: number
+
+          - name: mass_lbs
+            description: "Masa de la carga útil en libras."
+            data_type: number
+
+          # --- Detalles de Dragon (si aplica) ---
+          - name: dragon_capsule_id
+            description: "ID único de la cápsula Dragon asociada (si aplica)."
+            data_type: varchar
+            # Nota: Podrías añadir un test de relación si creas una tabla source para cápsulas.
+
+          - name: dragon_mass_returned_kg
+            description: "Masa retornada por la cápsula Dragon en kilogramos."
+            data_type: number
+
+          - name: dragon_mass_returned_lbs
+            description: "Masa retornada por la cápsula Dragon en libras."
+            data_type: number
+
+          - name: dragon_flight_time_sec
+            description: "Tiempo de vuelo de la cápsula Dragon en segundos."
+            data_type: number
+
+          - name: dragon_water_landing
+            description: "Indica si la cápsula Dragon realizó un aterrizaje en agua."
+            data_type: boolean
+
+          - name: dragon_land_landing
+            description: "Indica si la cápsula Dragon realizó un aterrizaje en tierra."
+            data_type: boolean
+
+          # --- Columnas de Listas (aplanadas a VARCHAR) ---
+          - name: customers_list
+            description: "Lista de clientes asociados a esta carga útil (como string separado por comas)."
+            data_type: varchar
+
+          - name: norad_ids_list
+            description: "Lista de NORAD IDs asociados a esta carga útil (como string separado por comas)."
+            data_type: varchar
+
+          - name: nationalities_list
+            description: "Lista de nacionalidades asociadas a esta carga útil (como string separado por comas)."
+            data_type: varchar
+
+          - name: manufacturers_list
+            description: "Lista de fabricantes asociados a esta carga útil (como string separado por comas)."
+            data_type: varchar
+
+      # --- rockets ---
       - name: rockets
+        description: "Datos raw de los tipos y versiones de cohetes de SpaceX."
         columns:
           - name: id
+            description: "ID único del tipo de cohete (Clave Primaria)."
             data_type: varchar
+            tests: # Tests para la clave primaria
+              - unique
+              - not_null
+
           - name: name
+            description: "Nombre del tipo de cohete (ej. Falcon 9, Falcon Heavy, Starship)."
             data_type: varchar
+            tests:
+              - not_null # El nombre del cohete debería ser conocido.
+
           - name: type
+            description: "Tipo de vehículo (ej. rocket)."
             data_type: varchar
+
           - name: active
+            description: "Indica si este tipo de cohete está actualmente activo."
             data_type: boolean
+
           - name: boosters
+            description: "Número de boosters laterales (para Falcon Heavy)."
             data_type: number
+            tests:
+              - not_null # Este conteo debería estar presente (al menos 0).
+
           - name: cost_per_launch
+            description: "Costo estimado por lanzamiento de este tipo de cohete (en USD)."
             data_type: number
+
           - name: success_rate_pct
+            description: "Porcentaje de éxito general para este tipo de cohete."
             data_type: number
+
           - name: first_flight
+            description: "Fecha del primer vuelo de este tipo de cohete."
             data_type: date
+
           - name: country
+            description: "País de origen del cohete."
             data_type: varchar
+
           - name: company
+            description: "Compañía fabricante del cohete."
             data_type: varchar
+
           - name: wikipedia
+            description: "URL de Wikipedia sobre este tipo de cohete."
             data_type: varchar
+
           - name: description
+            description: "Descripción detallada de este tipo de cohete."
             data_type: varchar
+
+          # --- Dimensiones Físicas y de Motor (aplanadas) ---
+          # Descripciones para cada dimensión física/atributo de motor
           - name: height_meters
+            description: "Altura del cohete en metros."
             data_type: number
           - name: height_feet
+            description: "Altura del cohete en pies."
             data_type: number
           - name: diameter_meters
+            description: "Diámetro del cohete en metros."
             data_type: number
           - name: diameter_feet
+            description: "Diámetro del cohete en pies."
             data_type: number
           - name: mass_kg
+            description: "Masa del cohete en kilogramos."
             data_type: number
           - name: mass_lb
+            description: "Masa del cohete en libras."
             data_type: number
           - name: engines_number
+            description: "Número de motores principales (generalmente en la primera etapa)."
             data_type: number
           - name: engines_type
+            description: "Tipo de motor principal (ej. Merlin)."
             data_type: varchar
           - name: engines_version
+            description: "Versión del motor principal (ej. 1D)."
             data_type: varchar
           - name: engine_propellant_1
+            description: "Primer propelente del motor principal."
             data_type: varchar
           - name: engine_propellant_2
+            description: "Segundo propelente del motor principal."
             data_type: varchar
           - name: engine_thrust_sea_level_kn
+            description: "Empuje del motor principal a nivel del mar (kN)."
             data_type: number
           - name: engine_thrust_vacuum_kn
+            description: "Empuje del motor principal en vacío (kN)."
             data_type: number
           - name: landing_legs_number
+            description: "Número de patas de aterrizaje."
             data_type: number
           - name: landing_legs_material
+            description: "Material de las patas de aterrizaje."
             data_type: varchar
+
+          # --- Detalles de Etapas (aplanados) ---
+          # Descripciones para cada detalle de etapa
           - name: first_stage_reusable
+            description: "Indica si la primera etapa de este tipo de cohete es reutilizable."
             data_type: boolean
           - name: first_stage_engines
+            description: "Número de motores en la primera etapa."
             data_type: number
           - name: first_stage_fuel_amount_tons
+            description: "Cantidad de combustible en la primera etapa (toneladas)."
             data_type: number
           - name: first_stage_burn_time_sec
+            description: "Tiempo de encendido de la primera etapa (segundos)."
             data_type: number
           - name: second_stage_engines
+            description: "Número de motores en la segunda etapa."
             data_type: number
           - name: second_stage_fuel_amount_tons
+            description: "Cantidad de combustible en la segunda etapa (toneladas)."
             data_type: number
           - name: second_stage_burn_time_sec
+            description: "Tiempo de encendido de la segunda etapa (segundos)."
             data_type: number
+
+          # --- Columnas de Listas (aplanadas a VARCHAR) ---
           - name: payload_weights_summary
+            description: "Lista de capacidades de carga útil a diferentes órbitas (ej. 'LEO: 22800 kg') (como string)."
             data_type: varchar
+
           - name: flickr_image_urls_list
+            description: "Lista de URLs de imágenes de Flickr asociadas a este tipo de cohete (como string separado por comas)."
             data_type: varchar
+
+      - name: landpads # --- NUEVA FUENTE: Definición para la tabla raw 'landpads' ---
+        description: "Tabla raw de sitios de aterrizaje (landpads) de SpaceX. Datos obtenidos directamente de la API /v4/landpads y cargados en Snowflake."
+        columns:
+          # Define CADA columna tal como aparece en tu tabla raw en Snowflake.
+          # Si cargaste desde un archivo CSV con encabezados, es muy probable que los nombres de columna estén en MAYÚSCULAS por defecto en Snowflake.
+          # Verifica los nombres de columna en tu tabla Snowflake si no estás seguro.
+          - name: ID
+            description: "ID único del landpad según la API de SpaceX. Sirve como clave primaria en la capa raw."
+            data_type: varchar # Usa el tipo de dato exacto que tiene esta columna en tu tabla Snowflake.
+            tests:
+              - unique # Test para asegurar que cada ID es único en la fuente raw.
+              - not_null # Test para asegurar que el ID nunca es nulo en la fuente raw.
+
+          - name: NAME
+            description: "Nombre corto común del landpad (ej. LZ-1, OCISLY, JRTI)."
+            data_type: varchar
+            tests:
+              - not_null # El nombre corto debería existir para cada landpad.
+
+          - name: FULL_NAME
+            description: "Nombre completo del landpad (ej. Landing Zone 1, Of Course I Still Love You)."
+            data_type: varchar
+            tests:
+              - not_null # El nombre completo debería existir para cada landpad.
+
+          - name: STATUS
+            description: "Estado operativo actual del landpad (ej. active, retired, unknown)."
+            data_type: varchar
+            # Los tests de accepted_values no suelen usarse en raw, ya que esta capa acepta los datos tal cual.
+
+          - name: TYPE
+            description: "Tipo de landpad: 'RTLS' (Return To Launch Site) o 'ASDS' (Autonomous Spaceport Drone Ship)."
+            data_type: varchar
+            tests:
+              - not_null # El tipo de landpad debería estar siempre especificado.
+
+          - name: LOCALITY
+            description: "Localidad geográfica del landpad (ej. Cape Canaveral, Port of Los Angeles)."
+            data_type: varchar
+
+          - name: REGION
+            description: "Región geográfica del landpad (ej. Florida, California)."
+            data_type: varchar
+
+          - name: LATITUDE
+            description: "Latitud de la ubicación del landpad (formato numérico)."
+            data_type: number # O el tipo numérico exacto de Snowflake (ej. NUMBER(10, 6))
+            tests:
+              - not_null # Las coordenadas suelen ser datos requeridos para un landpad.
+
+          - name: LONGITUDE
+            description: "Longitud de la ubicación del landpad (formato numérico)."
+            data_type: number # O el tipo numérico exacto de Snowflake
+            tests:
+              - not_null # Las coordenadas suelen ser datos requeridos para un landpad.
+
+          - name: LANDING_ATTEMPTS
+            description: "Número total de intentos de aterrizaje registrados para este landpad en la API."
+            data_type: number # O INTEGER
+            tests:
+              - not_null # El conteo de intentos debería existir (al menos 0).
+
+          - name: LANDING_SUCCESSES
+            description: "Número total de aterrizajes exitosos registrados para este landpad en la API."
+            data_type: number # O INTEGER
+            tests:
+              - not_null # El conteo de éxitos debería existir (al menos 0).
+
+          - name: WIKIPEDIA
+            description: "Enlace a la página de Wikipedia relevante sobre el landpad."
+            data_type: varchar
+
+          - name: DETAILS
+            description: "Detalles textuales adicionales sobre el landpad."
+            data_type: varchar
+
+          - name: IMAGE_URL_LARGE_FIRST # Nombre de la columna aplanada en el CSV Python
+            description: "URL de la primera imagen grande del landpad, extraída del campo 'images' del JSON."
+            data_type: varchar # O el tipo exacto en Snowflake
+
+          - name: LAUNCH_IDS_LIST # Nombre de la columna aplanada en el CSV Python (lista de IDs aplanada)
+            description: "Lista aplanada (como string separado por comas) de IDs de lanzamientos asociados a este landpad según la API."
+            data_type: varchar # O el tipo exacto en Snowflake
+
+
+          # Asegúrate de añadir AQUÍ cualquier otra columna que pueda existir en tu tabla raw de Snowflake para landpads.
+          # Verifica los nombres exactos y tipos de dato en Snowflake.
+      - name: capsules # --- NUEVA FUENTE: Definición para la tabla raw 'capsules' ---
+        description: "Tabla raw de cápsulas SpaceX (Dragon 1 y Dragon 2). Datos obtenidos de la API /v4/capsules y cargados en Snowflake."
+        columns:
+          # Define CADA columna tal como aparece en tu tabla raw en Snowflake (MAYÚSCULAS si cargaste de CSV)
+          - name: ID
+            description: "ID único de la cápsula según la API. Clave primaria en la capa raw."
+            data_type: varchar # Tipo de dato exacto en Snowflake.
+            tests:
+              - unique
+              - not_null
+
+          - name: SERIAL
+            description: "Número de serie de la cápsula (ej. C101, C206)."
+            data_type: varchar
+            tests:
+              - not_null # El serial debería existir.
+
+          - name: STATUS
+            description: "Estado actual de la cápsula (ej. retired, active, destroyed)."
+            data_type: varchar
+
+          - name: TYPE
+            description: "Tipo de cápsula (Dragon 1.0, Dragon 1.1, Dragon 2.0)."
+            data_type: varchar
+            tests:
+              - not_null # El tipo debería existir.
+
+          - name: REUSE_COUNT
+            description: "Número total de veces que la cápsula ha sido reutilizada."
+            data_type: number # O INTEGER
+            tests:
+              - not_null # El conteo debería existir (al menos 0).
+
+          - name: WATER_LANDINGS
+            description: "Número total de aterrizajes en agua (splashdowns) de la cápsula."
+            data_type: number # O INTEGER
+            tests:
+              - not_null # El conteo debería existir (al menos 0).
+
+          - name: LAND_LANDINGS
+            description: "Número total de aterrizajes en tierra (landings) de la cápsula."
+            data_type: number # O INTEGER
+            tests:
+              - not_null # El conteo debería existir (al menos 0).
+
+          - name: LAST_UPDATE
+            description: "Descripción del estado o ubicación más reciente de la cápsula."
+            data_type: varchar # Tipo de dato exacto en Snowflake.
+
+          - name: LAUNCH_IDS_LIST # Nombre de la columna aplanada en el CSV Python
+            description: "Lista aplanada (string separado por comas) de IDs de lanzamientos asociados a esta cápsula, según la API."
+            data_type: varchar # Tipo de dato exacto en Snowflake.
