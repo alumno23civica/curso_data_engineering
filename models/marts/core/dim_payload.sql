@@ -41,7 +41,7 @@ with stg_payloads as (
 
         customers_list,
         norad_ids_list,
-        nationalities_list,
+        nation,
         manufacturers_list
 
     from {{ ref('stg_spacex__payloads') }}
@@ -86,7 +86,7 @@ unknown_member as (
 
         CAST('Unknown' AS varchar) as customers_list, -- Placeholder string para listas
         CAST('Unknown' AS varchar) as norad_ids_list,
-        CAST('Unknown' AS varchar) as nationalities_list,
+        CAST('Unknown' AS varchar) as nation,
         CAST('Unknown' AS varchar) as manufacturers_list
         -- Asegúrate de NO poner coma después del último elemento de selección en este CTE
 
@@ -130,7 +130,7 @@ final as (
 
         customers_list,
         norad_ids_list,
-        nationalities_list,
+        nation,
         manufacturers_list
 
     from stg_payloads
@@ -145,7 +145,7 @@ final as (
         lifespan_years, apoapsis_km, periapsis_km, mass_kg, mass_lbs,
         dragon_capsule_id, dragon_mass_returned_kg, dragon_mass_returned_lbs,
         dragon_flight_time_sec, dragon_water_landing, dragon_land_landing,
-        customers_list, norad_ids_list, nationalities_list, manufacturers_list
+        customers_list, norad_ids_list, nation, manufacturers_list
     from unknown_member
 
 )

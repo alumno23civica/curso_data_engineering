@@ -22,6 +22,7 @@ unknown_member as (
     select
         -- Define la clave primaria del miembro desconocido
         -- Usa un valor que no colisione con IDs reales de la API
+        {{ dbt_utils.generate_surrogate_key(['\'unknown_core\'']) }} as core_sk,
         'unknown_core'::varchar as core_id,
 
         -- Atributos placeholders con tipos de dato que coincidan con stg_cores
@@ -49,6 +50,7 @@ final as (
     select
         -- Clave Primaria de la Dimensión
         -- Renombra el ID de staging a core_id
+        {{ dbt_utils.generate_surrogate_key(['core_id']) }} as core_sk,
         core_id,
 
         -- Atributos Descriptivos del Core

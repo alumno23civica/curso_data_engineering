@@ -19,7 +19,7 @@ filtered as (
         on cu.launch_id = l.launch_id
     where cu.launch_id is not null
       and cu.core_id is not null
-      and (l.is_upcoming = false or l.is_upcoming is null) -- ✅ corregido
+      and (l.is_upcoming = false or l.is_upcoming is null) 
 )
 
 select * from filtered

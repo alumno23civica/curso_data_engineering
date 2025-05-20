@@ -30,7 +30,7 @@ unknown_member as (
 
         -- Intenta poner las selecciones de literales en menos líneas.
         -- Asegúrate de la coma después de cada elemento (excepto el último).
-
+         {{ dbt_utils.generate_surrogate_key(['\'unknown_launch\'']) }} as landpad_sk,
         -- Clave Natural (ID del origen) - Atributo placeholder
         'unknown_launch'::varchar as launch_id,
 
@@ -69,10 +69,9 @@ final as (
     select
         -- Genera la Clave Primaria SUBROGADA para cada Lanzamiento real.
         -- Usa la clave natural 'launch_id' del staging para generar el hash.
-
+        {{ dbt_utils.generate_surrogate_key(['launch_id']) }} as launch_sk,
         -- Clave Natural (ID del origen) - Atributo descriptivo
         launch_id,
-
         -- Atributos Descriptivos del Lanzamiento (seleccionados de stg_launches)
         flight_number,
         launch_name,

@@ -50,7 +50,7 @@ renamed as (
         -- Casteamos explícitamente a Varchar
         CUSTOMERS_LIST::varchar as customers_list, -- Cast a varchar
         NORAD_IDS_LIST::varchar as norad_ids_list, -- Cast a varchar
-        NATIONALITIES_LIST::varchar as nationalities_list, -- Cast a varchar
+        NATIONALITIES_LIST::varchar as nation, -- Cast a varchar
         MANUFACTURERS_LIST::varchar as manufacturers_list -- Cast a varchar
 
         -- Si hay alguna otra columna en tu tabla raw, inclúyela aquí y casteala.

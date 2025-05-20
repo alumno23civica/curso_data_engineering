@@ -24,7 +24,8 @@ unknown_member as (
     select
         -- Genera una clave subrogada única y consistente para el miembro desconocido.
         -- Usa un string constante que no colisione con SKs reales.
-     
+        {{ dbt_utils.generate_surrogate_key(['\'unknown_capsule\'']) }} as capsule_sk,
+
 
         -- Clave Natural (ID del origen) - Atributo placeholder
         'unknown_capsule'::varchar as capsule_id, --Usar un string único y descriptivo como ID natural para el desconocido
@@ -54,7 +55,8 @@ final as (
         -- Usa la clave natural 'capsule_id' del staging para generar el hash.
      
         -- para cada valor único de 'capsule_id'.
-      
+        {{ dbt_utils.generate_surrogate_key(['capsule_id']) }} as capsule_sk,
+
 
         -- Clave Natural (ID del origen) - Ahora es solo un atributo descriptivo en la dimensión
         capsule_id,
