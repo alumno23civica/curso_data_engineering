@@ -60,9 +60,9 @@ final as (
     select
         -- Clave Primaria Compuesta de la Tabla de Hechos
         -- Identificadores naturales que definen la granularidad del evento de uso de core
+        scu.core_usage_sk,
         scu.launch_id,
         scu.core_id,
-       -- scu.core_flight_number_in_launch,
 
         -- Claves Foráneas (Naturales) a las Dimensiones
         -- Usamos LEFT JOINs a las dimensiones. Si el ID de origen es NULL

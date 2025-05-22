@@ -1,0 +1,101 @@
+# models/staging/schema.yml
+
+version: 2
+
+models:
+  # ----------------------------------------------------------------------------
+  # Staging
+  # ----------------------------------------------------------------------------
+
+  - name: stg_spacex__payloads
+    description: "Staging de datos de payloads."
+    columns:
+      - name: payload_id
+        description: "ID único del payload. PK."
+        tests:
+          - unique
+          - not_null
+      - name: launch_id
+        description: "ID del lanzamiento asociado. FK."
+        tests:
+          - not_null # Asumimos que todo payload tiene un launch_id
+      - name: payload_type
+        description: "Tipo de payload."
+
+  - name: stg_spacex__launches
+    description: "Staging de datos de lanzamientos."
+    columns:
+      - name: launch_id
+        description: "ID único del lanzamiento. PK."
+        tests:
+          - unique
+          - not_null
+      - name: launch_date_utc
+        description: "Fecha y hora UTC del lanzamiento."
+        tests:
+          - not_null
+      - name: flight_number
+        description: "Número de vuelo. Único."
+        tests:
+          - not_null
+      - name: rocket_id
+        description: "ID del cohete usado. FK."
+        tests:
+          - not_null
+      - name: launchpad_id
+        description: "ID de la plataforma de lanzamiento. FK."
+        tests:
+          - not_null
+
+  - name: stg_spacex__rockets
+    description: "Staging de datos de cohetes."
+    columns:
+      - name: rocket_id
+        description: "ID único del cohete. PK."
+        tests:
+          - unique
+          - not_null
+      - name: rocket_name
+        description: "Nombre del cohete."
+        tests:
+          - not_null
+
+  - name: stg_spacex__launchpads
+    description: "Staging de datos de plataformas de lanzamiento."
+    columns:
+      - name: launchpad_id
+        description: "ID único de la plataforma. PK."
+        tests:
+          - unique
+          - not_null
+      - name: launchpad_name
+        description: "Nombre de la plataforma."
+        tests:
+          - not_null
+
+  - name: stg_spacex__capsules
+    description: "Staging de datos de cápsulas Dragon."
+    columns:
+      - name: capsule_id
+        description: "ID único de la cápsula. PK."
+        tests:
+          - unique
+          - not_null
+      - name: capsule_serial
+        description: "Número de serie de la cápsula. Único."
+        tests:
+          - unique
+          - not_null
+
+  - name: stg_spacex__customers
+    description: "Staging de datos de clientes."
+    columns:
+      - name: customer_id
+        description: "ID único del cliente. PK."
+        tests:
+          - unique
+          - not_null
+      - name: customer_name
+        description: "Nombre del cliente."
+        tests:
+          - not_null

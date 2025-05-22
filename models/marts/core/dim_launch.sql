@@ -30,7 +30,7 @@ unknown_member as (
 
         -- Intenta poner las selecciones de literales en menos líneas.
         -- Asegúrate de la coma después de cada elemento (excepto el último).
-         {{ dbt_utils.generate_surrogate_key(['\'unknown_launch\'']) }} as landpad_sk,
+         {{ dbt_utils.generate_surrogate_key(['\'unknown_launch\'']) }} as launch_sk,
         -- Clave Natural (ID del origen) - Atributo placeholder
         'unknown_launch'::varchar as launch_id,
 

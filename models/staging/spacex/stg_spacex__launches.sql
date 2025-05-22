@@ -3,11 +3,20 @@
 /**
   Modelo Staging para los datos raw de lanzamientos, aplanados en Python.
 */
+{{ config(
+    materialized='incremental',
+    unique_key = 'launch_date_utc'
+    ) 
+    }}
 with source as (
 
     -- Referencia la tabla raw que cargaste con el archivo spacex_launches_raw_flattened.csv.
     select * from {{ source('spacex', 'launches') }}
+{% if is_incremental() %}
 
+	  WHERE date_utc> (SELECT MAX(launch_date_utc) FROM {{ this }} )
+
+{% endif %}
 ),
 
 renamed as (

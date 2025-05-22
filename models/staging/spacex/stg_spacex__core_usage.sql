@@ -9,7 +9,6 @@
 with source as (
 
     -- Referencia la tabla raw de uso de cores.
-    -- Asegúrate que tu source 'spacex' en schema.yml apunte a esta nueva tabla raw (ej. name: core_usage).
     select * from {{ source('spacex', 'core_usage') }}
 
 ),
@@ -38,12 +37,6 @@ renamed as (
         LANDING_TYPE_IN_LAUNCH::varchar as landing_type_in_launch, -- Tipo de aterrizaje (VARCHAR)
         LANDPAD_ID_IN_LANDING::varchar as landpad_id_in_landing, -- ID del landpad usado (FK a dim_landpad)
 
-        -- Atributos adicionales del core en este vuelo (si los incluiste en el CSV y raw)
-        -- Estos pueden ser redundantes si siempre unes a dim_core, pero pueden ser útiles aquí.
-        -- try_cast(CORE_BLOCK_IN_LAUNCH as number(38,1)) as core_block_in_launch, -- Si incluiste block y es NUMBER
-        -- CORE_SERIAL_IN_LAUNCH::varchar as core_serial_in_launch -- Si incluiste serial y es VARCHAR
-
-        -- Si hay alguna otra columna en tu tabla raw, inclúyela aquí y casteala.
 
 
     from source

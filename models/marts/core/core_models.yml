@@ -1,0 +1,228 @@
+# models/marts/schema.yml
+
+version: 2
+
+models:
+  # ----------------------------------------------------------------------------
+  # Dimensiones (Marts)
+  # ----------------------------------------------------------------------------
+
+  - name: dim_payload
+    description: "Dimension de payloads."
+    columns:
+      - name: payload_sk
+        description: "Surrogate Key del payload. PK."
+        tests:
+          - unique
+          - not_null
+      - name: payload_id
+        description: "ID natural del payload."
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_launch
+    description: "Dimension de lanzamientos."
+    columns:
+      - name: launch_sk
+        description: "Surrogate Key del lanzamiento. PK."
+        tests:
+          - unique
+          - not_null
+      - name: launch_id
+        description: "ID natural del lanzamiento."
+        tests:
+          - not_null
+          - unique
+      - name: flight_number
+        description: "Número de vuelo"
+        tests:
+          - not_null
+
+  - name: dim_rocket
+    description: "Dimension de cohetes."
+    columns:
+      - name: rocket_sk
+        description: "Surrogate Key del cohete. PK."
+        tests:
+          - unique
+          - not_null
+      - name: rocket_id
+        description: "ID natural del cohete."
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_launchpad
+    description: "Dimension de plataformas de lanzamiento."
+    columns:
+      - name: launchpad_sk
+        description: "Surrogate Key de la plataforma. PK."
+        tests:
+          - unique
+          - not_null
+      - name: launchpad_id
+        description: "ID natural de la plataforma."
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_capsule
+    description: "Dimension de capsulas Dragon."
+    columns:
+      - name: capsule_sk
+        description: "Surrogate Key de la capsula. PK."
+        tests:
+          - unique
+          - not_null
+      - name: capsule_id
+        description: "ID natural de la capsula."
+        tests:
+          - not_null
+          - unique
+      - name: capsule_serial
+        description: "Número de serie de la capsula. Único."
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_customer
+    description: "Dimension de clientes."
+    columns:
+      - name: customer_sk
+        description: "Surrogate Key del cliente. PK."
+        tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: "ID natural del cliente."
+        tests:
+          - not_null
+          - unique
+
+
+  # ----------------------------------------------------------------------------
+  # Tablas de Hechos (Marts)
+  # ----------------------------------------------------------------------------
+
+  - name: fact_payload_delivery
+    description: "Tabla de hechos de la entrega de payloads."
+    columns:
+      - name: payload_id
+        description: "ID natural del payload (Grano de la tabla)."
+        tests:
+          - not_null
+      - name: payload_sk
+        description: "FK a dim_payload."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_payload')
+              field: payload_sk
+      - name: launch_sk
+        description: "FK a dim_launch."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_launch')
+              field: launch_sk
+      - name: time_id
+        description: "FK a dim_time (fecha de lanzamiento)."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_time')
+              field: date_day
+      - name: rocket_sk
+        description: "FK a dim_rocket."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_rocket')
+              field: rocket_sk
+      - name: launchpad_sk
+        description: "FK a dim_launchpad."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_launchpad')
+              field: launchpad_sk
+      - name: capsule_sk
+        description: "FK a dim_capsule."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_capsule')
+              field: capsule_sk
+      - name: count_of_payloads_delivered
+        description: "Contador de eventos de entrega de payload (siempre 1)."
+        tests:
+          - not_null
+
+
+  - name: fact_launch_event
+    description: "Tabla de hechos de eventos de lanzamiento."
+    columns:
+      - name: launch_sk
+        description: "FK a dim_launch. PK de la tabla de hechos."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_launch')
+              field: launch_sk
+      - name: time_id
+        description: "FK a dim_time (fecha de lanzamiento)."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_time')
+              field: date_day
+      - name: rocket_sk
+        description: "FK a dim_rocket."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_rocket')
+              field: rocket_sk
+      - name: launchpad_sk
+        description: "FK a dim_launchpad."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_launchpad')
+              field: launchpad_sk
+      - name: count_of_launches
+        description: "Contador de lanzamientos (siempre 1)."
+        tests:
+          - not_null
+
+  - name: fact_capsule_return
+    description: "Tabla de hechos de retornos de cápsulas Dragon."
+    columns:
+      - name: capsule_sk
+        description: "FK a dim_capsule. PK de la tabla de hechos."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_capsule')
+              field: capsule_sk
+      - name: time_id
+        description: "FK a dim_time (fecha de retorno)."
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_time')
+              field: date_day
+      - name: count_of_returns
+        description: "Contador de retornos de cápsulas (siempre 1)."
+        tests:
+          - not_null
+
+  # ----------------------------------------------------------------------------
+  # Tablas Puente (Bridge Tables) (Marts)
+  # ----------------------------------------------------------------------------
+
+  - name: bridge_payload_customer
+    description: "Tabla puente entre payloads y clientes (relación M:N)."
